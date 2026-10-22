@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SupTec - Entrar</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="pagina-login">
+  <main class="login">
+    <h1 class="login-marca">SupTec</h1>
+    <p class="login-descricao">Gestão de estoque e manutenção</p>
+
+    <form id="form-login" novalidate>
+      <div class="campo">
+        <label for="login">Usuário</label>
+        <input type="text" id="login" name="login" autocomplete="username" autocapitalize="none" required autofocus>
+      </div>
+      <div class="campo">
+        <label for="senha">Senha</label>
+        <input type="password" id="senha" name="senha" autocomplete="current-password" required>
+      </div>
+      <p id="erro-login" class="erro" role="alert" hidden></p>
+      <button type="submit" class="botao botao-primario botao-largo">Entrar</button>
+    </form>
+
+    <details class="login-teste">
+      <summary>Usuários de teste</summary>
+      <table class="tabela tabela-compacta">
+        <thead>
+          <tr><th>Perfil</th><th>Usuário</th><th>Senha</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Chefe</td><td class="mono">chefe</td><td class="mono">chefe123</td></tr>
+          <tr><td>Atendente</td><td class="mono">atendente</td><td class="mono">atendente123</td></tr>
+          <tr><td>Ajudante geral</td><td class="mono">ajudante</td><td class="mono">ajudante123</td></tr>
+          <tr><td>Técnico</td><td class="mono">tecnico</td><td class="mono">tecnico123</td></tr>
+        </tbody>
+      </table>
+    </details>
+  </main>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

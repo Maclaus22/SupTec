@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SupTec - Gestão de estoque e manutenção</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="pagina-app">
+  <aside class="barra-lateral">
+    <div class="marca">SupTec</div>
+
+    <nav class="menu" aria-label="Módulos do sistema">
+      <button type="button" class="menu-item" data-tela="manutencao" data-perm="manutencao.consultar" hidden>Manutenções</button>
+      <button type="button" class="menu-item" data-tela="caixa" data-perm="caixa.vender" hidden>Caixa</button>
+      <button type="button" class="menu-item" data-tela="produtos" data-perm="produto.consultar" hidden>Produtos</button>
+      <button type="button" class="menu-item" data-tela="estoque" data-perm="estoque.consultar" hidden>Estoque</button>
+      <button type="button" class="menu-item" data-tela="usuarios" data-perm="usuario.gerenciar" hidden>Usuários</button>
+      <button type="button" class="menu-item" data-tela="backup" data-perm="backup.gerenciar" hidden>Backup</button>
+    </nav>
+
+    <div class="usuario-logado">
+      <p class="usuario-nome" id="usuario-nome"></p>
+      <p class="usuario-perfil" id="usuario-perfil"></p>
+      <button type="button" class="botao botao-claro" id="btn-sair">Sair</button>
+    </div>
+  </aside>
+
+  <main class="conteudo">
+    <div id="mensagens" class="mensagens" role="status" aria-live="polite"></div>
+
+    <!-- Manutenções (4.1, 4.2, 4.3, 4.12) -->
+    <section id="tela-manutencao" class="tela" hidden>
+      <header class="tela-topo">
+        <h1>Manutenções</h1>
+        <button type="button" class="botao botao-primario" id="man-btn-nova" data-perm="manutencao.registrar" hidden>Nova manutenção</button>
+      </header>
+
+      <div id="man-painel-lista">
+        <form id="man-form-busca" class="busca" role="search">
+          <div class="campo campo-grande">
+            <label for="man-busca-termo">Buscar</label>
+            <input type="search" id="man-busca-termo" placeholder="Identificador, proprietário, contato, marca ou modelo">
+          </div>
+          <div class="campo">
+            <label for="man-busca-status">Status</label>
+            <select id="man-busca-status">
+              <option value="">Todos</option>
+              <option value="em_andamento">Em andamento</option>
+              <option value="concluida">Concluída</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+          </div>
+          <button type="submit" class="botao">Buscar</button>
+        </form>
+
+        <div class="tabela-envoltorio" id="man-tabela">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th>Identificador</th>
+                <th>Proprietário</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Status</th>
+                <th>Registrada em</th>
+                <th><span class="somente-leitor">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="man-lista"></tbody>
+          </table>
+        </div>
+        <p id="man-vazio" class="vazio" hidden>Nenhum registro encontrado. Tente outro termo ou limpe o filtro de status.</p>
+      </div>
+
+      <div id="man-painel-detalhe" class="painel" hidden>
+        <h2 id="man-detalhe-titulo"></h2>
+        <dl id="man-detalhe-dados" class="dados"></dl>
+        <div class="acoes">
+          <button type="button" class="botao botao-primario" id="man-btn-editar">Editar</button>
+          <button type="button" class="botao botao-perigo-suave" id="man-btn-cancelar">Cancelar manutenção</button>
+          <button type="button" class="botao" id="man-detalhe-voltar">Voltar à lista</button>
+        </div>
+      </div>
+
+      <div id="man-painel-form" class="painel" hidden>
+        <form id="man-form" novalidate>
+          <h2 id="man-form-titulo">Nova manutenção</h2>
+
+          <fieldset class="grupo">
+            <legend>Proprietário</legend>
+            <div class="campo">
+              <label for="man-nome">Nome do proprietário</label>
+              <input type="text" id="man-nome" data-campo="nomeProprietario" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="man-telefone">Telefone com DDD</label>
+              <input type="tel" id="man-telefone" data-campo="telefone" inputmode="tel" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="man-email">E-mail</label>
+              <input type="email" id="man-email" data-campo="email" autocomplete="off">
+            </div>
+            <p class="ajuda">Informe pelo menos um contato: telefone ou e-mail.</p>
+          </fieldset>
+
+          <fieldset class="grupo">
+            <legend>Aparelho</legend>
+            <div class="campo">
+              <label for="man-marca">Marca</label>
+              <input type="text" id="man-marca" data-campo="marcaDispositivo" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="man-modelo">Modelo</label>
+              <input type="text" id="man-modelo" data-campo="modeloDispositivo" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="man-tempo-uso">Tempo de uso (meses)</label>
+              <input type="number" id="man-tempo-uso" data-campo="tempoUsoMeses" min="0" step="1" inputmode="numeric">
+            </div>
+            <div class="campo campo-largo">
+              <label for="man-anteriores">Manutenções anteriores (opcional)</label>
+              <textarea id="man-anteriores" data-campo="manutencoesAnteriores" rows="2"></textarea>
+            </div>
+          </fieldset>
+
+          <fieldset class="grupo">
+            <legend>Manutenção</legend>
+            <div class="campo">
+              <label for="man-tipo">Tipo de manutenção</label>
+              <input type="text" id="man-tipo" data-campo="tipoManutencao" autocomplete="off">
+            </div>
+            <div class="campo" id="man-campo-status" hidden>
+              <label for="man-status">Status</label>
+              <select id="man-status" data-campo="status">
+                <option value="em_andamento">Em andamento</option>
+                <option value="concluida">Concluída</option>
+              </select>
+            </div>
+            <div class="campo campo-largo">
+              <label for="man-defeito">Defeito apresentado</label>
+              <textarea id="man-defeito" data-campo="defeito" rows="3"></textarea>
+            </div>
+          </fieldset>
+
+          <p id="man-form-erro" class="erro" role="alert" hidden></p>
+          <div class="acoes">
+            <button type="submit" class="botao botao-primario">Salvar</button>
+            <button type="button" class="botao" id="man-form-voltar">Voltar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Caixa (4.5) -->
+    <section id="tela-caixa" class="tela" hidden>
+      <header class="tela-topo">
+        <h1>Caixa</h1>
+      </header>
+
+      <div class="caixa-grade">
+        <div class="painel">
+          <form id="cx-form-codigo" novalidate>
+            <div class="campo">
+              <label for="cx-codigo">Código de barras</label>
+              <input type="text" id="cx-codigo" inputmode="numeric" autocomplete="off">
+            </div>
+            <button type="submit" class="botao">Buscar produto</button>
+          </form>
+
+          <form id="cx-form-quantidade" class="produto-lido" novalidate hidden>
+            <p class="produto-lido-nome" id="cx-produto-nome"></p>
+            <p class="produto-lido-valor" id="cx-produto-valor"></p>
+            <div class="campo">
+              <label for="cx-quantidade">Quantidade</label>
+              <input type="number" id="cx-quantidade" min="1" step="1" value="1" inputmode="numeric">
+            </div>
+            <div class="acoes">
+              <button type="submit" class="botao botao-primario">Adicionar à venda</button>
+              <button type="button" class="botao" id="cx-btn-descartar">Descartar</button>
+            </div>
+          </form>
+
+          <p id="cx-erro" class="erro" role="alert" hidden></p>
+        </div>
+
+        <div class="painel">
+          <h2>Venda atual</h2>
+          <div class="tabela-envoltorio" id="cx-tabela" hidden>
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th class="num">Qtd.</th>
+                  <th class="num">Valor unitário</th>
+                  <th class="num">Subtotal</th>
+                  <th><span class="somente-leitor">Ações</span></th>
+                </tr>
+              </thead>
+              <tbody id="cx-itens"></tbody>
+            </table>
+          </div>
+          <p id="cx-vazio" class="vazio">Nenhum produto na venda. Leia o código de barras para começar.</p>
+
+          <p class="total"><span>Total</span> <strong id="cx-total">R$ 0,00</strong></p>
+          <div class="acoes">
+            <button type="button" class="botao botao-primario" id="cx-btn-finalizar" disabled>Finalizar venda</button>
+            <button type="button" class="botao" id="cx-btn-cancelar" disabled>Cancelar venda</button>
+          </div>
+          <p class="ajuda">O pagamento é feito na maquininha, fora do sistema.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Produtos (4.4, 4.8, 4.9) -->
+    <section id="tela-produtos" class="tela" hidden>
+      <header class="tela-topo">
+        <h1>Produtos</h1>
+        <button type="button" class="botao botao-primario" id="prod-btn-novo" data-perm="produto.cadastrar" hidden>Novo produto</button>
+      </header>
+
+      <div id="prod-painel-lista">
+        <form id="prod-form-busca" class="busca" role="search">
+          <div class="campo campo-grande">
+            <label for="prod-busca-termo">Buscar</label>
+            <input type="search" id="prod-busca-termo" placeholder="Nome ou código de barras">
+          </div>
+          <label class="checagem" data-perm="produto.remover" hidden>
+            <input type="checkbox" id="prod-mostrar-removidos">
+            Mostrar removidos
+          </label>
+          <button type="submit" class="botao">Buscar</button>
+        </form>
+
+        <div class="tabela-envoltorio" id="prod-tabela">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Código de barras</th>
+                <th class="num">Valor</th>
+                <th class="num">Estoque</th>
+                <th class="num">Mínimo</th>
+                <th>Distribuidora</th>
+                <th>Situação</th>
+                <th><span class="somente-leitor">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="prod-lista"></tbody>
+          </table>
+        </div>
+        <p id="prod-vazio" class="vazio" hidden>Nenhum produto encontrado.</p>
+      </div>
+
+      <div id="prod-painel-form" class="painel" hidden>
+        <form id="prod-form" novalidate>
+          <h2 id="prod-form-titulo">Novo produto</h2>
+          <div class="grupo">
+            <div class="campo">
+              <label for="prod-nome">Nome</label>
+              <input type="text" id="prod-nome" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="prod-codigo">Código de barras</label>
+              <input type="text" id="prod-codigo" inputmode="numeric" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="prod-valor">Valor (R$)</label>
+              <input type="number" id="prod-valor" min="0.01" step="0.01" inputmode="decimal">
+            </div>
+            <div class="campo" id="prod-campo-quantidade">
+              <label for="prod-quantidade">Quantidade inicial em estoque</label>
+              <input type="number" id="prod-quantidade" min="0" step="1" value="0" inputmode="numeric">
+            </div>
+            <div class="campo">
+              <label for="prod-minimo">Estoque mínimo</label>
+              <input type="number" id="prod-minimo" min="0" step="1" value="0" inputmode="numeric">
+            </div>
+            <div class="campo">
+              <label for="prod-distribuidora">Distribuidora</label>
+              <input type="text" id="prod-distribuidora" autocomplete="off">
+            </div>
+          </div>
+          <p id="prod-form-erro" class="erro" role="alert" hidden></p>
+          <div class="acoes">
+            <button type="submit" class="botao botao-primario">Salvar</button>
+            <button type="button" class="botao" id="prod-form-voltar">Voltar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Estoque (4.6, 4.10, 4.11) -->
+    <section id="tela-estoque" class="tela" hidden>
+      <header class="tela-topo">
+        <h1>Estoque</h1>
+      </header>
+
+      <div class="painel-grade">
+        <section class="painel painel-largo">
+          <h2>Estoque baixo</h2>
+          <div class="tabela-envoltorio" id="est-baixo-tabela">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th>Produto</th>
+                  <th class="num">Em estoque</th>
+                  <th class="num">Mínimo</th>
+                  <th>Distribuidora</th>
+                </tr>
+              </thead>
+              <tbody id="est-baixo"></tbody>
+            </table>
+          </div>
+          <p id="est-baixo-vazio" class="vazio" hidden>Nenhum produto com estoque baixo.</p>
+        </section>
+
+        <section class="painel" data-perm="estoque.entrada" hidden>
+          <h2>Registrar entrada</h2>
+          <form id="est-form-entrada" novalidate>
+            <div class="campo">
+              <label for="est-entrada-produto">Produto (nome ou código de barras)</label>
+              <input type="text" id="est-entrada-produto" list="est-lista-produtos" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="est-entrada-quantidade">Quantidade recebida</label>
+              <input type="number" id="est-entrada-quantidade" min="1" step="1" inputmode="numeric">
+            </div>
+            <div class="campo">
+              <label for="est-entrada-obs">Observação (opcional)</label>
+              <input type="text" id="est-entrada-obs" autocomplete="off">
+            </div>
+            <p id="est-entrada-erro" class="erro" role="alert" hidden></p>
+            <button type="submit" class="botao botao-primario">Registrar entrada</button>
+          </form>
+        </section>
+
+        <section class="painel" data-perm="estoque.ajustar" hidden>
+          <h2>Ajustar estoque</h2>
+          <form id="est-form-ajuste" novalidate>
+            <div class="campo">
+              <label for="est-ajuste-produto">Produto (nome ou código de barras)</label>
+              <input type="text" id="est-ajuste-produto" list="est-lista-produtos" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="est-ajuste-contada">Quantidade contada</label>
+              <input type="number" id="est-ajuste-contada" min="0" step="1" inputmode="numeric">
+            </div>
+            <div class="campo">
+              <label for="est-ajuste-obs">Motivo do ajuste</label>
+              <input type="text" id="est-ajuste-obs" autocomplete="off">
+            </div>
+            <p id="est-ajuste-erro" class="erro" role="alert" hidden></p>
+            <button type="submit" class="botao botao-primario">Registrar ajuste</button>
+          </form>
+        </section>
+
+        <section class="painel painel-largo">
+          <h2>Últimas movimentações</h2>
+          <div class="tabela-envoltorio" id="est-movimentos-tabela">
+            <table class="tabela">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Produto</th>
+                  <th>Tipo</th>
+                  <th class="num">Qtd.</th>
+                  <th>Motivo</th>
+                  <th>Usuário</th>
+                  <th>Observação</th>
+                </tr>
+              </thead>
+              <tbody id="est-movimentos"></tbody>
+            </table>
+          </div>
+          <p id="est-movimentos-vazio" class="vazio" hidden>Ainda não há movimentações de estoque.</p>
+        </section>
+      </div>
+
+      <datalist id="est-lista-produtos"></datalist>
+    </section>
+
+    <!-- Usuários (4.13) -->
+    <section id="tela-usuarios" class="tela" hidden>
+      <header class="tela-topo">
+        <h1>Usuários</h1>
+        <button type="button" class="botao botao-primario" id="usr-btn-novo">Novo usuário</button>
+      </header>
+
+      <div id="usr-painel-lista">
+        <div class="tabela-envoltorio">
+          <table class="tabela">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Login</th>
+                <th>Perfil</th>
+                <th>Situação</th>
+                <th><span class="somente-leitor">Ações</span></th>
+              </tr>
+            </thead>
+            <tbody id="usr-lista"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="usr-painel-form" class="painel" hidden>
+        <form id="usr-form" novalidate>
+          <h2 id="usr-form-titulo">Novo usuário</h2>
+          <div class="grupo">
+            <div class="campo">
+              <label for="usr-nome">Nome</label>
+              <input type="text" id="usr-nome" autocomplete="off">
+            </div>
+            <div class="campo">
+              <label for="usr-login">Login</label>
+              <input type="text" id="usr-login" autocomplete="off" autocapitalize="none">
+            </div>
+            <div class="campo">
+              <label for="usr-perfil">Perfil</label>
+              <select id="usr-perfil"></select>
+            </div>
+            <div class="campo">
+              <label for="usr-senha">Senha</label>
+              <input type="password" id="usr-senha" autocomplete="new-password">
+              <p class="ajuda" id="usr-senha-ajuda" hidden>Deixe em branco para manter a senha atual.</p>
+            </div>
+          </div>
+          <p id="usr-form-erro" class="erro" role="alert" hidden></p>
+          <div class="acoes">
+            <button type="submit" class="botao botao-primario">Salvar</button>
+            <button type="button" class="botao" id="usr-form-voltar">Voltar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- Backup (4.7) -->
+    <section id="tela-backup" class="tela" hidden>
+      <header class="tela-topo">
+        <h1>Backup</h1>
+      </header>
+
+      <div class="painel-grade">
+        <section class="painel">
+          <h2>Cópia de segurança</h2>
+          <p id="bkp-ultimo"></p>
+          <button type="button" class="botao botao-primario" id="bkp-btn-baixar">Baixar backup agora</button>
+          <p class="ajuda">Guarde o arquivo fora do computador da loja, em pen drive ou na nuvem. Ele contém dados pessoais de clientes e as senhas protegidas dos usuários.</p>
+        </section>
+
+        <section class="painel">
+          <h2>Restaurar backup</h2>
+          <p>A restauração substitui todos os dados atuais pelos do arquivo escolhido. Teste a restauração pelo menos uma vez por mês.</p>
+          <div class="campo">
+            <label for="bkp-arquivo">Arquivo de backup (.json)</label>
+            <input type="file" id="bkp-arquivo" accept=".json,application/json">
+          </div>
+          <p id="bkp-erro" class="erro" role="alert" hidden></p>
+          <button type="button" class="botao botao-perigo-suave" id="bkp-btn-restaurar">Restaurar backup</button>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="dialogo" class="dialogo" aria-labelledby="dialogo-titulo">
+    <div class="dialogo-corpo">
+      <h2 id="dialogo-titulo"></h2>
+      <p id="dialogo-texto"></p>
+      <div class="campo" id="dialogo-campo-wrapper" hidden>
+        <label for="dialogo-campo" id="dialogo-rotulo"></label>
+        <textarea id="dialogo-campo" rows="3"></textarea>
+      </div>
+      <p id="dialogo-erro" class="erro" role="alert" hidden></p>
+      <div class="acoes">
+        <button type="button" class="botao botao-primario" id="dialogo-ok">Confirmar</button>
+        <button type="button" class="botao" id="dialogo-cancelar">Voltar</button>
+      </div>
+    </div>
+  </dialog>
+
+  <script src="js/storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/estoque.js"></script>
+  <script src="js/produtos.js"></script>
+  <script src="js/manutencao.js"></script>
+  <script src="js/caixa.js"></script>
+  <script src="js/usuarios.js"></script>
+  <script src="js/backup.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
